@@ -1,4 +1,6 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+
+![image](https://github.com/user-attachments/assets/7206fa5a-8da1-469a-894c-eaae79f48363)
+
 
 
 ---
@@ -23,7 +25,7 @@
 
 4. **Installation**  
    ```bash
-   git clone https://github.com/votre-repo.git
+   git clone https://github.com/mohamadibf/gestion-livres-backend.git
    cd backend
    composer install
    cp .env.example .env
