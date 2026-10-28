@@ -60,3 +60,13 @@ php artisan test           # Tests
  - Mode debug dans .env
     ```bash
     APP_DEBUG=true
+
+
+## Authentification (Sanctum SPA, cookies de session)
+
+- Variables `.env` à définir : `FRONTEND_URL=http://localhost:5173`, `SANCTUM_STATEFUL_DOMAINS=localhost:5173`, `SESSION_DOMAIN=localhost`, et un SMTP (Mailpit en dev) pour la vérification d'email et la réinitialisation de mot de passe.
+- Le frontend et l'API doivent utiliser le même hôte (`localhost`, pas `127.0.0.1`) pour que les cookies fonctionnent.
+- Routes : `POST /api/register`, `/api/login`, `/api/logout`, `/api/forgot-password`, `/api/reset-password`, `GET /api/user`, préalable `GET /sanctum/csrf-cookie`.
+- Les livres exigent un utilisateur connecté et vérifié ; seuls les `admin` peuvent créer, modifier et supprimer (`BookPolicy`).
+- `php artisan migrate --seed` crée `admin@example.com` et `reader@example.com` (mot de passe `password`, développement uniquement).
+- Tests : `php artisan test`.

@@ -2,107 +2,71 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreBookRequest;
+use App\Http\Requests\UpdateBookRequest;
+use App\Http\Resources\BookResource;
 use App\Models\Book;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class BookController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 6);
-        $books = Book::latest()->paginate($perPage);
+        Gate::authorize('viewAny', Book::class);
 
-        return response()->json([
-            'data' => $books->items(),
-            'meta' => [
-                'current_page' => $books->currentPage(),
-                'last_page' => $books->lastPage(),
-                'per_page' => $books->perPage(),
-                'total' => $books->total(),
-            ],
-            'links' => [
-                'first' => $books->url(1),
-                'last' => $books->url($books->lastPage()),
-                'prev' => $books->previousPageUrl(),
-                'next' => $books->nextPageUrl(),
-            ],
-        ]);
+        $perPage = min(max((int) $request->input('per_page', 6), 1), 50);
+
+        return BookResource::collection(Book::latest()->paginate($perPage));
     }
 
-    public function store(Request $request)
+    public function store(StoreBookRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'author' => 'required|string|max:255',
-            'isbn' => 'required|string|unique:books|max:20',
-            'published_year' => 'required|integer',
-            'genre' => 'required|string',
-            'description' => 'nullable|string',
-            'page_count' => 'nullable|integer',
-            'language' => 'nullable|string',
-            'publisher' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
+        $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('books', 'public');
-            $validated['image_path'] = $imagePath;
+            $data['image_path'] = $request->file('image')->store('books', 'public');
         }
 
-        $book = Book::create($validated);
-        return response()->json($book, 201);
+        return (new BookResource(Book::create($data)))->response()->setStatusCode(201);
     }
 
     public function show(Book $book)
     {
-        return response()->json($book);
+        Gate::authorize('view', $book);
+
+        return new BookResource($book);
     }
 
-    public function update(Request $request, Book $book)
+    public function update(UpdateBookRequest $request, Book $book)
     {
-        $validated = $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'author' => 'sometimes|string|max:255',
-            'isbn' => 'sometimes|string|unique:books,isbn,' . $book->id . '|max:20',
-            'published_year' => 'sometimes|integer',
-            'genre' => 'sometimes|string',
-            'description' => 'nullable|string',
-            'page_count' => 'nullable|integer',
-            'language' => 'nullable|string',
-            'publisher' => 'nullable|string',
-            'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
-
-
-
+        $data = $request->safe()->except('image');
 
         if ($request->hasFile('image')) {
-            if ($book->image_path) {
-                Storage::delete('public/' . $book->image_path);
-            }
-            $path = $request->file('image')->store('books', 'public');;
-            $validated['image_path'] = $path;
+            $this->deleteImage($book);
+            $data['image_path'] = $request->file('image')->store('books', 'public');
         }
 
-        $updated = $book->update($validated);
+        $book->update($data);
 
-
-        return response()->json([
-            'success' => $updated,
-            'changes' => $book->getChanges(),
-            'book' => $book->fresh()
-        ]);
+        return new BookResource($book->fresh());
     }
 
     public function destroy(Book $book)
     {
-        if ($book->image_path) {
-            Storage::delete(str_replace('storage/', 'public/', $book->image_path));
-        }
+        Gate::authorize('delete', $book);
 
+        $this->deleteImage($book);
         $book->delete();
+
         return response()->noContent();
+    }
+
+    private function deleteImage(Book $book): void
+    {
+        if ($book->image_path) {
+            Storage::disk('public')->delete($book->image_path);
+        }
     }
 }
