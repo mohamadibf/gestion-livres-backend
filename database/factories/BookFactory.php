@@ -18,6 +18,7 @@ class BookFactory extends Factory
             'published_year' => fake()->numberBetween(1950, (int) date('Y')),
             'genre' => 'Roman',
             'language' => 'Français',
+            'loanable' => true,
         ];
     }
 }

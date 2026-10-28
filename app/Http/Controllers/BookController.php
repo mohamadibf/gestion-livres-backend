@@ -32,7 +32,8 @@ class BookController extends Controller
             $query->where(fn ($q) => $q
                 ->where('title', 'like', $term)
                 ->orWhere('author', 'like', $term)
-                ->orWhere('isbn', 'like', $term));
+                ->orWhere('isbn', 'like', $term)
+                ->orWhere('shelf_mark', 'like', $term));
         }
 
         if (! empty($filters['genre'])) {
@@ -61,7 +62,8 @@ class BookController extends Controller
             $data['image_path'] = $request->file('image')->store('books', 'public');
         }
 
-        return (new BookResource(Book::create($data)))->response()->setStatusCode(201);
+        // refresh() : renvoie aussi les valeurs par défaut posées par la base
+        return (new BookResource(Book::create($data)->refresh()))->response()->setStatusCode(201);
     }
 
     public function show(Book $book)

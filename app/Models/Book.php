@@ -20,12 +20,20 @@ class Book extends Model
         'image_path',
         'page_count',
         'language',
-        'publisher'
+        'publisher',
+        'shelf_mark',
+        'physical_condition',
+        'keywords',
+        'loanable',
     ];
+
+    public const CONDITIONS = ['excellent', 'good', 'restore'];
 
     protected $casts = [
         'published_year' => 'integer',
-        'page_count' => 'integer'
+        'page_count' => 'integer',
+        'keywords' => 'array',
+        'loanable' => 'boolean',
     ];
 }
 
