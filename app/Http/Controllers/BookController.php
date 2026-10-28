@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class BookController extends Controller
 {
@@ -24,7 +25,7 @@ class BookController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);
 
-        $query = Book::query();
+        $query = Book::query()->with('activeLoan.user');
 
         if ($search = trim($filters['search'] ?? '')) {
             // Les jokers LIKE saisis par l'utilisateur sont échappés pour être recherchés littéralement
@@ -70,7 +71,7 @@ class BookController extends Controller
     {
         Gate::authorize('view', $book);
 
-        return new BookResource($book);
+        return new BookResource($book->load('activeLoan.user'));
     }
 
     public function update(UpdateBookRequest $request, Book $book)
@@ -84,12 +85,16 @@ class BookController extends Controller
 
         $book->update($data);
 
-        return new BookResource($book->fresh());
+        return new BookResource($book->fresh('activeLoan.user'));
     }
 
     public function destroy(Book $book)
     {
         Gate::authorize('delete', $book);
+
+        if ($book->activeLoan()->exists()) {
+            throw ValidationException::withMessages(['book' => 'Ce livre est actuellement emprunté et ne peut pas être supprimé.']);
+        }
 
         $this->deleteImage($book);
         $book->delete();

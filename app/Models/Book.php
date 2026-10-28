@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Book extends Model
 {
@@ -35,5 +37,15 @@ class Book extends Model
         'keywords' => 'array',
         'loanable' => 'boolean',
     ];
-}
 
+    public function loans(): HasMany
+    {
+        return $this->hasMany(Loan::class);
+    }
+
+    /** Prêt en cours (au plus un). */
+    public function activeLoan(): HasOne
+    {
+        return $this->hasOne(Loan::class)->whereNull('returned_at');
+    }
+}

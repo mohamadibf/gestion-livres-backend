@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\LoanController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -29,5 +30,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Livres : lecture pour tout utilisateur connecté et vérifié, écriture réservée aux admins (BookPolicy)
     Route::middleware('verified')->group(function () {
         Route::apiResource('books', BookController::class);
+
+        Route::get('/loans', [LoanController::class, 'index']);
+        Route::post('/books/{book}/borrow', [LoanController::class, 'store']);
+        Route::post('/loans/{loan}/return', [LoanController::class, 'return']);
+        Route::post('/loans/{loan}/renew', [LoanController::class, 'renew']);
     });
 });
