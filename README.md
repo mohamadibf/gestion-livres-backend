@@ -141,8 +141,12 @@ Service web Render : runtime **Docker**, `healthCheckPath=/up`, et ces variables
 | `SANCTUM_STATEFUL_DOMAINS` | le nom d'hôte seul (`….onrender.com`) |
 | `DB_URL` | URL Postgres (ex. Neon), avec `?sslmode=require` |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` | premier administrateur, créé au démarrage s'il n'en existe aucun (à définir dans le tableau de bord) |
-| `MAIL_MAILER` | `log` (les emails apparaissent dans les journaux) ou un mailer par API |
+| `MAIL_MAILER` | `resend` (envoi réel par l'API HTTP de [Resend](https://resend.com)) ou `log` (les emails apparaissent dans les journaux, pour une démo) |
+| `RESEND_API_KEY` | clé API Resend (à saisir dans le tableau de bord, jamais dans le dépôt) |
+| `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | expéditeur, sur un domaine vérifié dans Resend |
 | `LOG_LEVEL` | `debug` avec `MAIL_MAILER=log`, sinon `info` |
+
+Resend exige une adresse d'expéditeur issue d'un domaine vérifié. L'adresse d'essai de Resend (`onboarding@resend.dev`) ne permet d'écrire qu'au propriétaire du compte Resend : sans domaine vérifié, seule la personne qui a créé le compte reçoit les emails de vérification.
 
 Particularités du plan gratuit : mise en veille après 15 minutes d'inactivité, **système de fichiers éphémère** (les couvertures téléversées sont perdues au redémarrage ; prévoir un disque persistant ou un stockage objet pour la production) et ports SMTP bloqués (utiliser un mailer par API HTTP).
 
