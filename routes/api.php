@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -35,6 +36,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn (Request $request) => $request->user());
     Route::post('/email/verification-notification', [VerifyEmailController::class, 'resend'])
         ->middleware('throttle:6,1');
+
+    // Profil : accessible même sans email vérifié (pour corriger une adresse erronée)
+    Route::get('/profile/stats', [ProfileController::class, 'stats']);
+    Route::patch('/profile', [ProfileController::class, 'update'])->middleware('throttle:20,1');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->middleware('throttle:6,1');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->middleware('throttle:6,1');
 
     // Écriture des livres réservée aux admins (BookPolicy) ; emprunts réservés aux comptes vérifiés
     Route::middleware('verified')->group(function () {
