@@ -19,6 +19,10 @@ class LoanService
                 $book = Book::whereKey($book->id)->lockForUpdate()->firstOrFail();
                 User::whereKey($user->id)->lockForUpdate()->first();
 
+                if ($book->isDraft()) {
+                    $this->fail("Ce livre n'est pas encore publié.");
+                }
+
                 if (! $book->loanable) {
                     $this->fail('Ce livre est réservé à la consultation sur place.');
                 }

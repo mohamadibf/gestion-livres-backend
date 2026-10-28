@@ -13,14 +13,30 @@ class StoreBookRequest extends FormRequest
         return $this->user()?->can('create', Book::class) ?? false;
     }
 
+    /** Statut visé par la requête : un brouillon n'exige que le titre et l'auteur. */
+    protected function targetStatus(): string
+    {
+        return $this->input('status', Book::STATUS_PUBLISHED);
+    }
+
+    /** Livre exclu du contrôle d'unicité de l'ISBN (celui qu'on modifie). */
+    protected function bookToIgnore(): ?Book
+    {
+        return null;
+    }
+
     public function rules(): array
     {
+        $publishing = $this->targetStatus() !== Book::STATUS_DRAFT;
+        $needed = $publishing ? 'required' : 'nullable';
+
         return [
+            'status' => ['sometimes', Rule::in([Book::STATUS_PUBLISHED, Book::STATUS_DRAFT])],
             'title' => ['required', 'string', 'max:255'],
             'author' => ['required', 'string', 'max:255'],
-            'isbn' => ['required', 'string', 'max:20', Rule::unique('books', 'isbn')],
-            'published_year' => ['required', 'integer', 'min:1000', 'max:'.date('Y')],
-            'genre' => ['required', 'string', 'max:100'],
+            'isbn' => [$needed, 'string', 'max:20', Rule::unique('books', 'isbn')->ignore($this->bookToIgnore())],
+            'published_year' => [$needed, 'integer', 'min:1000', 'max:'.date('Y')],
+            'genre' => [$needed, 'string', 'max:100'],
             'description' => ['nullable', 'string'],
             'page_count' => ['nullable', 'integer', 'min:1'],
             'language' => ['nullable', 'string', 'max:50'],

@@ -22,10 +22,18 @@ class BookController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'genre' => ['nullable', 'string', 'max:100'],
             'sort' => ['nullable', Rule::in(['recent', 'title', 'author', 'year_asc', 'year_desc'])],
+            'status' => ['nullable', Rule::in([Book::STATUS_PUBLISHED, Book::STATUS_DRAFT])],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);
 
         $query = Book::query()->with('activeLoan.user');
+
+        // Visiteurs et lecteurs ne voient jamais les brouillons ; les admins peuvent filtrer par statut
+        if (! $request->user()?->isAdmin()) {
+            $query->where('status', Book::STATUS_PUBLISHED);
+        } elseif (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
 
         if ($search = trim($filters['search'] ?? '')) {
             // Les jokers LIKE saisis par l'utilisateur sont échappés pour être recherchés littéralement
@@ -67,9 +75,10 @@ class BookController extends Controller
         return (new BookResource(Book::create($data)->refresh()))->response()->setStatusCode(201);
     }
 
-    public function show(Book $book)
+    public function show(Request $request, Book $book)
     {
-        Gate::authorize('view', $book);
+        // 404 plutôt que 403 : on ne révèle pas l'existence d'un brouillon
+        abort_if($book->isDraft() && ! $request->user()?->isAdmin(), 404);
 
         return new BookResource($book->load('activeLoan.user'));
     }

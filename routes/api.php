@@ -21,15 +21,19 @@ Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify']
     ->middleware(['signed', 'throttle:6,1'])
     ->name('verification.verify');
 
+// Catalogue public (visiteurs inclus) : seuls les livres publiés sont renvoyés (voir BookController)
+Route::get('/books', [BookController::class, 'index'])->middleware('throttle:120,1');
+Route::get('/books/{book}', [BookController::class, 'show'])->middleware('throttle:120,1');
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', LogoutController::class);
     Route::get('/user', fn (Request $request) => $request->user());
     Route::post('/email/verification-notification', [VerifyEmailController::class, 'resend'])
         ->middleware('throttle:6,1');
 
-    // Livres : lecture pour tout utilisateur connecté et vérifié, écriture réservée aux admins (BookPolicy)
+    // Écriture des livres réservée aux admins (BookPolicy) ; emprunts réservés aux comptes vérifiés
     Route::middleware('verified')->group(function () {
-        Route::apiResource('books', BookController::class);
+        Route::apiResource('books', BookController::class)->except(['index', 'show']);
 
         Route::get('/loans', [LoanController::class, 'index']);
         Route::post('/books/{book}/borrow', [LoanController::class, 'store']);

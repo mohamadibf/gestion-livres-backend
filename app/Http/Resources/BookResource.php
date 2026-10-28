@@ -35,6 +35,7 @@ class BookResource extends JsonResource
             'physical_condition' => $this->physical_condition,
             'keywords' => $this->keywords ?? [],
             'loanable' => $this->loanable,
+            'status' => $this->status,
             'loan_status' => $status,
             'current_loan' => $loan ? [
                 'id' => $loan->id,

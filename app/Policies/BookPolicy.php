@@ -7,14 +7,16 @@ use App\Models\User;
 
 class BookPolicy
 {
-    public function viewAny(User $user): bool
+    // Le catalogue est public : l'utilisateur peut être absent (visiteur)
+    public function viewAny(?User $user): bool
     {
         return true;
     }
 
-    public function view(User $user, Book $book): bool
+    // Un brouillon n'est visible que des administrateurs
+    public function view(?User $user, Book $book): bool
     {
-        return true;
+        return ! $book->isDraft() || (bool) $user?->isAdmin();
     }
 
     public function create(User $user): bool

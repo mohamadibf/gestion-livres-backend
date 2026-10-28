@@ -27,9 +27,14 @@ class Book extends Model
         'physical_condition',
         'keywords',
         'loanable',
+        'status',
     ];
 
     public const CONDITIONS = ['excellent', 'good', 'restore'];
+
+    public const STATUS_PUBLISHED = 'published';
+
+    public const STATUS_DRAFT = 'draft';
 
     protected $casts = [
         'published_year' => 'integer',
@@ -37,6 +42,11 @@ class Book extends Model
         'keywords' => 'array',
         'loanable' => 'boolean',
     ];
+
+    public function isDraft(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
 
     public function loans(): HasMany
     {

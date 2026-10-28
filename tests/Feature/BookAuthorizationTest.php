@@ -31,16 +31,22 @@ class BookAuthorizationTest extends TestCase
         ], $overrides);
     }
 
-    public function test_guest_gets_401(): void
+    public function test_guest_can_browse_but_not_write(): void
     {
-        $this->getJson('/api/books')->assertUnauthorized();
+        Book::factory()->create();
+
+        $this->getJson('/api/books')->assertOk()->assertJsonCount(1, 'data');
         $this->postJson('/api/books', $this->payload())->assertUnauthorized();
+        $this->getJson('/api/loans')->assertUnauthorized();
     }
 
-    public function test_unverified_user_gets_403(): void
+    public function test_unverified_user_can_browse_but_not_borrow(): void
     {
-        $this->actingAs(User::factory()->unverified()->create(), 'web')
-            ->getJson('/api/books')->assertForbidden();
+        $user = User::factory()->unverified()->create();
+        $book = Book::factory()->create();
+
+        $this->actingAs($user, 'web')->getJson('/api/books')->assertOk();
+        $this->postJson("/api/books/{$book->id}/borrow")->assertForbidden();
     }
 
     public function test_reader_can_read_but_not_write(): void
