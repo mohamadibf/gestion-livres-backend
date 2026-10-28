@@ -9,6 +9,7 @@ use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class BookController extends Controller
 {
@@ -16,9 +17,40 @@ class BookController extends Controller
     {
         Gate::authorize('viewAny', Book::class);
 
-        $perPage = min(max((int) $request->input('per_page', 6), 1), 50);
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'genre' => ['nullable', 'string', 'max:100'],
+            'sort' => ['nullable', Rule::in(['recent', 'title', 'author', 'year_asc', 'year_desc'])],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
 
-        return BookResource::collection(Book::latest()->paginate($perPage));
+        $query = Book::query();
+
+        if ($search = trim($filters['search'] ?? '')) {
+            // Les jokers LIKE saisis par l'utilisateur sont échappés pour être recherchés littéralement
+            $term = '%'.addcslashes($search, '%_\\').'%';
+            $query->where(fn ($q) => $q
+                ->where('title', 'like', $term)
+                ->orWhere('author', 'like', $term)
+                ->orWhere('isbn', 'like', $term));
+        }
+
+        if (! empty($filters['genre'])) {
+            $query->where('genre', $filters['genre']);
+        }
+
+        match ($filters['sort'] ?? 'recent') {
+            'title' => $query->orderBy('title'),
+            'author' => $query->orderBy('author'),
+            'year_asc' => $query->orderBy('published_year'),
+            'year_desc' => $query->orderByDesc('published_year'),
+            default => $query->latest(),
+        };
+
+        // Second critère pour garder une pagination stable en cas d'égalité
+        $query->orderByDesc('id');
+
+        return BookResource::collection($query->paginate($filters['per_page'] ?? 6)->withQueryString());
     }
 
     public function store(StoreBookRequest $request)
