@@ -22,7 +22,7 @@ class UserController extends Controller
 
         if ($search = trim($filters['search'] ?? '')) {
             $term = '%'.addcslashes($search, '%_\\').'%';
-            $query->where(fn ($q) => $q->where('name', 'like', $term)->orWhere('email', 'like', $term));
+            $query->where(fn ($q) => $q->whereLike('name', $term)->orWhereLike('email', $term));
         }
 
         return UserResource::collection(

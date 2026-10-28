@@ -38,11 +38,12 @@ class BookController extends Controller
         if ($search = trim($filters['search'] ?? '')) {
             // Les jokers LIKE saisis par l'utilisateur sont échappés pour être recherchés littéralement
             $term = '%'.addcslashes($search, '%_\\').'%';
+            // whereLike ignore la casse sur tous les SGBD (ILIKE sur Postgres, où LIKE est sensible à la casse)
             $query->where(fn ($q) => $q
-                ->where('title', 'like', $term)
-                ->orWhere('author', 'like', $term)
-                ->orWhere('isbn', 'like', $term)
-                ->orWhere('shelf_mark', 'like', $term));
+                ->whereLike('title', $term)
+                ->orWhereLike('author', $term)
+                ->orWhereLike('isbn', $term)
+                ->orWhereLike('shelf_mark', $term));
         }
 
         if (! empty($filters['genre'])) {

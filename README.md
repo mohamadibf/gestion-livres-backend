@@ -126,3 +126,24 @@ Avec PHP 8.5, des avertissements de dépréciation de PDO peuvent s'afficher san
 - Les cookies ne passent pas : vérifiez que le site et l'API sont tous deux en `localhost`, et `SANCTUM_STATEFUL_DOMAINS`.
 - Aucun email reçu : lancez Mailpit et vérifiez `MAIL_MAILER=smtp`, `MAIL_PORT=1025`.
 - Le port 8000 est occupé : `php artisan serve --port=8001` et adaptez `VITE_API_URL` côté frontend.
+
+## Déploiement sur Render
+
+Le `Dockerfile` construit une image unique : Laravel (PHP 8.3, Nginx) **et** le frontend React compilé (clone du dépôt public `gestion-livres-frontend`). Laravel sert le site et l'API sur la même origine, ce qui garantit les cookies de session et le CSRF sans configuration CORS. Les migrations s'exécutent au démarrage.
+
+Service web Render : runtime **Docker**, `healthCheckPath=/up`, et ces variables d'environnement :
+
+| Variable | Valeur |
+|---|---|
+| `PORT` | `8080` |
+| `APP_KEY` | clé générée avec `php artisan key:generate --show` |
+| `APP_URL`, `FRONTEND_URL` | l'URL publique du service (`https://….onrender.com`) |
+| `SANCTUM_STATEFUL_DOMAINS` | le nom d'hôte seul (`….onrender.com`) |
+| `DB_URL` | URL Postgres (ex. Neon), avec `?sslmode=require` |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` | premier administrateur, créé au démarrage s'il n'en existe aucun (à définir dans le tableau de bord) |
+| `MAIL_MAILER` | `log` (les emails apparaissent dans les journaux) ou un mailer par API |
+| `LOG_LEVEL` | `debug` avec `MAIL_MAILER=log`, sinon `info` |
+
+Particularités du plan gratuit : mise en veille après 15 minutes d'inactivité, **système de fichiers éphémère** (les couvertures téléversées sont perdues au redémarrage ; prévoir un disque persistant ou un stockage objet pour la production) et ports SMTP bloqués (utiliser un mailer par API HTTP).
+
+La construction peut cibler une autre branche du frontend : `--build-arg FRONTEND_REF=main`.

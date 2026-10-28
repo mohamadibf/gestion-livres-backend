@@ -56,6 +56,13 @@ return [
 
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
 
+    // Premier administrateur créé au démarrage (voir `php artisan users:ensure-admin`)
+    'initial_admin' => [
+        'email' => env('ADMIN_EMAIL'),
+        'name' => env('ADMIN_NAME', 'Administrateur'),
+        'password' => env('ADMIN_PASSWORD'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

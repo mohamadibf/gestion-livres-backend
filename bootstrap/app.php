@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Derrière le proxy TLS de l'hébergeur : fait confiance à X-Forwarded-* (URL signées, https)
+        $middleware->trustProxies(at: '*');
+
         $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {

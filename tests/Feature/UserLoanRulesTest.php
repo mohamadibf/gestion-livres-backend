@@ -29,8 +29,9 @@ class UserLoanRulesTest extends TestCase
     public function test_user_list_is_admin_only(): void
     {
         $this->as(null)->getJson('/api/users')->assertUnauthorized();
+        $target = User::factory()->create();
         $this->as(User::factory()->create())->getJson('/api/users')->assertForbidden();
-        $this->as(User::factory()->create())->patchJson('/api/users/1', ['loan_limit' => 3])->assertForbidden();
+        $this->as(User::factory()->create())->patchJson("/api/users/{$target->id}", ['loan_limit' => 3])->assertForbidden();
     }
 
     public function test_admin_lists_searches_and_sees_effective_values(): void
