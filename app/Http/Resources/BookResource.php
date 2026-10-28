@@ -42,6 +42,7 @@ class BookResource extends JsonResource
                 'due_at' => $loan->due_at,
                 'days_left' => $loan->daysLeft(),
                 'overdue' => $loan->isOverdue(),
+                'due_soon' => ! $loan->isOverdue() && $loan->daysLeft() <= (int) app(\App\Services\Settings::class)->get('due_soon_days'),
                 'mine' => $viewer?->id === $loan->user_id,
                 // Le nom de l'emprunteur n'est donné qu'aux admins
                 'borrower' => $viewer?->isAdmin() ? $loan->user?->name : null,

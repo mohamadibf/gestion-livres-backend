@@ -8,6 +8,8 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +27,9 @@ Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify']
 Route::get('/books', [BookController::class, 'index'])->middleware('throttle:120,1');
 Route::get('/books/{book}', [BookController::class, 'show'])->middleware('throttle:120,1');
 
+// Réglages publics (nom, durée de prêt...) : lecture seule pour tous
+Route::get('/settings', [SettingsController::class, 'show'])->middleware('throttle:120,1');
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', LogoutController::class);
     Route::get('/user', fn (Request $request) => $request->user());
@@ -39,5 +44,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/books/{book}/borrow', [LoanController::class, 'store']);
         Route::post('/loans/{loan}/return', [LoanController::class, 'return']);
         Route::post('/loans/{loan}/renew', [LoanController::class, 'renew']);
+
+        // Administration
+        Route::put('/settings', [SettingsController::class, 'update']);
+        Route::get('/users', [UserController::class, 'index']);
+        Route::patch('/users/{user}', [UserController::class, 'update']);
     });
 });

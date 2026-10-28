@@ -31,7 +31,7 @@ class LoanService
                     $this->fail('Ce livre est déjà emprunté.');
                 }
 
-                $max = (int) config('loans.max_active_per_user');
+                $max = $user->effectiveLoanLimit();
                 if ($max > 0 && Loan::active()->where('user_id', $user->id)->count() >= $max) {
                     $this->fail($max === 1
                         ? 'Vous avez déjà un livre emprunté. Rendez-le avant d\'en emprunter un autre.'
@@ -42,7 +42,7 @@ class LoanService
                     'book_id' => $book->id,
                     'user_id' => $user->id,
                     'borrowed_at' => now(),
-                    'due_at' => now()->addDays((int) config('loans.duration_days')),
+                    'due_at' => now()->addDays($user->effectiveLoanDuration()),
                     'active_book_id' => $book->id,
                 ]);
             });
@@ -77,12 +77,13 @@ class LoanService
             if ($loan->isOverdue()) {
                 $this->fail('Un emprunt en retard ne peut pas être prolongé : rendez le livre.');
             }
-            if ($loan->renewals_count >= (int) config('loans.max_renewals')) {
+            if ($loan->renewals_count >= (int) app(Settings::class)->get('max_renewals')) {
                 $this->fail('Cet emprunt a déjà été prolongé.');
             }
 
             $loan->forceFill([
-                'due_at' => $loan->due_at->copy()->addDays((int) config('loans.duration_days')),
+                // Une prolongation ajoute la durée de prêt applicable à l'emprunteur
+                'due_at' => $loan->due_at->copy()->addDays($loan->user->effectiveLoanDuration()),
                 'renewals_count' => $loan->renewals_count + 1,
             ])->save();
 

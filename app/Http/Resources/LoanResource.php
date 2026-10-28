@@ -12,7 +12,9 @@ class LoanResource extends JsonResource
     {
         $viewer = $request->user();
         $isOwner = $viewer && $viewer->id === $this->user_id;
-        $max = (int) config('loans.max_renewals');
+        $settings = app(\App\Services\Settings::class);
+        $max = (int) $settings->get('max_renewals');
+        $dueSoon = $this->isActive() && ! $this->isOverdue() && $this->daysLeft() <= (int) $settings->get('due_soon_days');
 
         return [
             'id' => $this->id,
@@ -35,6 +37,7 @@ class LoanResource extends JsonResource
             'renewals_count' => $this->renewals_count,
             'active' => $this->isActive(),
             'overdue' => $this->isOverdue(),
+            'due_soon' => $dueSoon,
             'days_left' => $this->isActive() ? $this->daysLeft() : null,
             'mine' => $isOwner,
             'can_return' => $this->isActive() && ($isOwner || ($viewer && $viewer->isAdmin())),

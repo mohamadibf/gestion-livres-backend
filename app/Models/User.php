@@ -23,6 +23,18 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
     ];
 
+    /** Limite d'emprunts simultanés applicable à ce lecteur (exception, sinon réglage global). 0 = illimité. */
+    public function effectiveLoanLimit(): int
+    {
+        return $this->loan_limit ?? (int) app(\App\Services\Settings::class)->get('max_active_loans');
+    }
+
+    /** Durée de prêt applicable à ce lecteur, en jours. */
+    public function effectiveLoanDuration(): int
+    {
+        return $this->loan_duration_days ?? (int) app(\App\Services\Settings::class)->get('loan_duration_days');
+    }
+
     public const ROLE_ADMIN = 'admin';
 
     public const ROLE_READER = 'reader';
@@ -52,7 +64,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'loan_limit' => 'integer',
+            'loan_duration_days' => 'integer',
         ];
+    }
+
+    public function activeLoans(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Loan::class)->whereNull('returned_at');
     }
 
     public function loans(): \Illuminate\Database\Eloquent\Relations\HasMany
